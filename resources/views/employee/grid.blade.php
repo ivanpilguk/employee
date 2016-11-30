@@ -6,6 +6,8 @@
 	    <h1>List of Employee</h1>
 	</div>
 
+	<p><a href="{{ url('/create') }}">Add new employee</a></p>
+
 	<div id="employee_search" class="well">
 	    <div class="row">
 		   	<form id="employee_search_form" action="" method="get">
@@ -40,8 +42,8 @@
 		    	<div class="panel-heading">
 			    	<div class="row">
 			    		<div class="col-sm-1"><a href="{{ URL::action('EmployeeController@grid', array_merge(Request::all(),['sort'=>'id'])) }}">Id</a></div>
-						<div class="col-sm-3"><a href="{{ URL::action('EmployeeController@grid', array_merge(Request::all(),['sort'=>'surname'])) }}">Full Name</a></div>
-						<div class="col-sm-2"><a href="{{ URL::action('EmployeeController@grid', array_merge(Request::all(),['sort'=>'work_from'])) }}">Work from</a></div>
+						<div class="col-sm-2"><a href="{{ URL::action('EmployeeController@grid', array_merge(Request::all(),['sort'=>'surname'])) }}">Full Name</a></div>
+						<div class="col-sm-1"><a href="{{ URL::action('EmployeeController@grid', array_merge(Request::all(),['sort'=>'work_from'])) }}">Work from</a></div>
 						<div class="col-sm-1"><a href="{{ URL::action('EmployeeController@grid', array_merge(Request::all(),['sort'=>'salary'])) }}">Salary</a></div>
 						<div class="col-sm-3"><a href="{{ URL::action('EmployeeController@grid', array_merge(Request::all(),['sort'=>'post_id'])) }}">Post</a></div>
 						<div class="col-sm-2"><a href="{{ URL::action('EmployeeController@grid', array_merge(Request::all(),['sort'=>'boss_id'])) }}">Boss</a></div>
@@ -53,11 +55,19 @@
 			    	@if($ind!=0)<hr/>@endif
 			    	<div class="row">
 						<div class="col-sm-1">{{ $e->id }}</div>
-						<div class="col-sm-3">{{ $e->surname }} {{ $e->name }} {{ $e->middlename }}</div>
-						<div class="col-sm-2">{{ $e->work_from }}</div>
+						<div class="col-sm-2">{{ $e->surname }} {{ $e->name }} {{ $e->middlename }}</div>
+						<div class="col-sm-1">{{ $e->work_from }}</div>
 						<div class="col-sm-1">{{ $e->salary }}</div>
-						<div class="col-sm-3">{{ $e->post->name }} (id:{{ $e->post->id }})</div>
+						<div class="col-sm-3">@if ($e->post){{ $e->post->name }} (id:{{ $e->post->id }})@else-@endif</div>
 						<div class="col-sm-2">@if ($e->boss){{ $e->boss->surname }} (id:{{ $e->boss->id }})@else-@endif</div>
+						<div class="col-sm-1"><input class="btn btn-default btn-info" type="button" value="Edit" onclick="location.href='{{ url('/edit/'.$e->id) }}';" /></div>
+						<div class="col-sm-1">
+							<form action="{{ url('/delete/'.$e->id) }}" method="POST">
+                                {{ csrf_field() }}
+                                {{ method_field('DELETE') }}
+                                <button type="submit" class="btn btn-default btn-danger">Delete</button>
+                            </form>
+                        </div>
 					</div>
 					@endforeach
 				</div>

@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 
 use App\Repositories\EmployeeRepository;
 
+use App\Employee;
+use App\Post;
+
 class EmployeeController extends Controller
 {
     /**
@@ -14,6 +17,21 @@ class EmployeeController extends Controller
      * @var EmployeeRepository
      */
     protected $employee;
+
+    /**
+     * Validation rules.
+     *
+     * @var string[]
+     */
+    protected $rules = [
+            'surname' => 'required|max:100',
+            'name' => 'required|max:100',
+            'middlename' => 'required|max:100',
+            'work_from' => 'required|date:Y-m-d',
+            'salary' => 'required|numeric',
+            'post_id' => 'numeric',
+            'boss_id' => 'numeric',
+        ];
 
     /**
      * Create a new controller instance.
@@ -110,7 +128,7 @@ class EmployeeController extends Controller
      */
     public function create()
     {
-        return view('employee.create');
+        return view('employee.create',['posts'=>Post::get()]);
     }
 
     /**
@@ -127,7 +145,7 @@ class EmployeeController extends Controller
             return redirect("/list");
         }
 
-        return view('employee.edit', ['employee'=>$employee]);
+        return view('employee.edit', ['employee'=>$employee,'posts'=>Post::get()]);
     }
 
     /**
@@ -138,15 +156,38 @@ class EmployeeController extends Controller
      */
     public function store(Request $request)
     {
-        $this->validate($request, [
-            'name' => 'required|max:100',
-            //
+        $this->validate($request, $this->rules);
+
+        //create new employee
+        $employee=Employee::create([
+            'surname' => $request->surname,
+            'name' => $request->name,
+            'middlename' => $request->middlename,
+            'work_from' => $request->work_from,
+            'salary' => $request->salary,
         ]);
 
-        $request->employee()->create([
-            'name' => $request->name,
-            //
-        ]);
+        //set post for the employee
+        if($request->post_id)
+        {
+            $post=Post::find($request->post_id);
+            if($post)
+            {
+                $employee->post()->associate($post);
+                $employee->save();
+            }
+        }
+
+        //set boss for the employee
+        if($request->boss_id)
+        {
+            $boss=Employee::find($request->boss_id);
+            if($boss)
+            {
+                $employee->boss()->associate($boss);
+                $employee->save();
+            }
+        }
 
         return redirect('/list');
     }
@@ -160,15 +201,54 @@ class EmployeeController extends Controller
      */
     public function update(Request $request, Employee $employee)
     {
-        $this->validate($request, [
-            'name' => 'required|max:100',
-            //
+        $this->validate($request, $this->rules);
+
+        //update the employee information
+        $employee->update([
+            'surname' => $request->surname,
+            'name' => $request->name,
+            'middlename' => $request->middlename,
+            'work_from' => $request->work_from,
+            'salary' => $request->salary,
         ]);
 
-        $employee->update([
-            'name' => $request->name,
-            //
-        ]);
+        //set post for the employee
+        if($request->post_id!=$employee->post_id)
+        {
+            if($request->post_id)
+            {
+                $post=Post::find($request->post_id);
+                if($post)
+                {
+                    $employee->post()->associate($post);
+                    $employee->save();
+                }
+            }
+            else
+            {
+                $employee->post()->dissociate();
+                $employee->save();
+            }
+        }
+
+        //set boss for the employee
+        if($request->boss_id!=$employee->boss_id)
+        {
+            if($request->boss_id)
+            {
+                $boss=Employee::find($request->boss_id);
+                if($boss)
+                {
+                    $employee->boss()->associate($boss);
+                    $employee->save();
+                }
+            }
+            else
+            {
+                $employee->boss()->dissociate();
+                $employee->save();
+            }
+        }
 
         return redirect('/list');
     }
@@ -182,6 +262,16 @@ class EmployeeController extends Controller
      */
     public function destroy(Request $request, Employee $employee)
     {
+        $boss=$employee->boss;
+        if($boss)
+        {
+            //set new boss for the subordinates before deleting
+            foreach($employee->subordinates as $sub)
+            {
+                $sub->boss()->associate($boss);
+                $sub->save();
+            }
+        }
         $employee->delete();
 
         return redirect('/list');

@@ -3,6 +3,7 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Model
 {
@@ -21,6 +22,15 @@ class Employee extends Model
     protected $fillable = [
         'name', 'surname', 'middlename', 'work_from', 'salary',
     ];
+
+    use SoftDeletes;
+
+    /**
+     * The attributes that should be mutated to dates.
+     *
+     * @var array
+     */
+    protected $dates = ['deleted_at'];
 
     /**
      * Get the boss of the employee.
@@ -41,7 +51,7 @@ class Employee extends Model
     /**
      * Get the subordinates of the employee.
      */
-    public function getSubList()
+    public function subordinates()
     {
         return $this->hasMany(Employee::class, 'boss_id');
     }
